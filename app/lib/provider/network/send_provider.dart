@@ -11,6 +11,7 @@ import 'package:localsend_app/model/state/send/sending_file.dart';
 import 'package:localsend_app/pages/home_page.dart';
 import 'package:localsend_app/pages/progress_page.dart';
 import 'package:localsend_app/pages/send_page.dart';
+import 'package:localsend_app/provider/chat/chat_provider.dart';
 import 'package:localsend_app/provider/device_info_provider.dart';
 import 'package:localsend_app/provider/dio_provider.dart';
 import 'package:localsend_app/provider/progress_provider.dart';
@@ -36,6 +37,8 @@ final sendProvider = NotifierProvider<SendNotifier, Map<String, SendSessionState
 class SendNotifier extends Notifier<Map<String, SendSessionState>> {
   SendNotifier();
 
+  final Set<String> _chatSessionIds = {};
+
   @override
   Map<String, SendSessionState> init() {
     return {};
@@ -48,6 +51,7 @@ class SendNotifier extends Notifier<Map<String, SendSessionState>> {
     required Device target,
     required List<CrossFile> files,
     required bool background,
+    bool recordChat = false,
   }) async {
     final requestDio = ref.read(dioProvider).longLiving;
     final uploadDio = ref.read(dioProvider).longLiving;
@@ -114,6 +118,15 @@ class SendNotifier extends Notifier<Map<String, SendSessionState>> {
       state: (_) => requestState,
     );
 
+    if (recordChat) {
+      _chatSessionIds.add(sessionId);
+      try {
+        await ref.notifier(chatProvider).recordOutgoingSession(requestState);
+      } catch (e, st) {
+        logChatError(e, st);
+      }
+    }
+
     if (!background) {
       // ignore: use_build_context_synchronously, unawaited_futures
       Routerino.context.push(
@@ -153,6 +166,7 @@ class SendNotifier extends Notifier<Map<String, SendSessionState>> {
           ),
         );
       }
+      await _touchChat(sessionId);
       return;
     }
 
@@ -182,6 +196,7 @@ class SendNotifier extends Notifier<Map<String, SendSessionState>> {
               errorMessage: e.humanErrorMessage,
             ),
           );
+          await _touchChat(sessionId);
           return;
         }
       }
@@ -201,6 +216,7 @@ class SendNotifier extends Notifier<Map<String, SendSessionState>> {
         Routerino.context.pushRootImmediately(() => const HomePage(initialTab: HomeTab.transfer, appStart: false));
       }
 
+      await _touchChat(sessionId);
       closeSession(sessionId);
       return;
     }
@@ -233,6 +249,7 @@ class SendNotifier extends Notifier<Map<String, SendSessionState>> {
         files: sendingFiles,
       ),
     );
+    await _touchChat(sessionId);
 
     await _send(sessionId, uploadDio, target, sendingFiles);
   }
@@ -312,12 +329,22 @@ class SendNotifier extends Notifier<Map<String, SendSessionState>> {
         sessionId: sessionId,
         state: (s) => s?.withFileStatus(file.file.id, fileError != null ? FileStatus.failed : FileStatus.finished, fileError),
       );
+      await _touchChat(sessionId);
     }
 
     if (state[sessionId] != null && state[sessionId]!.status != SessionStatus.sending) {
       _logger.info('Transfer was canceled.');
+      await _touchChat(sessionId);
     } else {
       if (!hasError && state[sessionId]?.background == true) {
+        state = state.updateSession(
+          sessionId: sessionId,
+          state: (s) => s?.copyWith(
+            status: SessionStatus.finished,
+            endTime: DateTime.now().millisecondsSinceEpoch,
+          ),
+        );
+        await _touchChat(sessionId);
         // close session because everything is fine and it is in background
         closeSession(sessionId);
         _logger.info('Transfer finished and session removed.');
@@ -336,6 +363,7 @@ class SendNotifier extends Notifier<Map<String, SendSessionState>> {
         } else {
           _logger.info('Transfer finished successfully.');
         }
+        await _touchChat(sessionId);
       }
     }
   }
@@ -361,7 +389,12 @@ class SendNotifier extends Notifier<Map<String, SendSessionState>> {
     }
 
     // finally, close session locally
+    final snapshot = state[sessionId]?.copyWith(status: SessionStatus.canceledBySender);
     closeSession(sessionId);
+    if (snapshot != null) {
+      // ignore: discarded_futures
+      _syncChat(snapshot);
+    }
   }
 
   void cancelSessionByReceiver(String sessionId) {
@@ -378,6 +411,8 @@ class SendNotifier extends Notifier<Map<String, SendSessionState>> {
         endTime: DateTime.now().millisecondsSinceEpoch,
       ),
     );
+    // ignore: discarded_futures
+    _touchChat(sessionId);
   }
 
   /// Closes the session
@@ -396,6 +431,25 @@ class SendNotifier extends Notifier<Map<String, SendSessionState>> {
   void clearAllSessions() {
     state = {};
     ref.notifier(progressProvider).removeAllSessions();
+  }
+
+  Future<void> _touchChat(String sessionId) async {
+    final session = state[sessionId];
+    if (session == null) {
+      return;
+    }
+    await _syncChat(session);
+  }
+
+  Future<void> _syncChat(SendSessionState session) async {
+    if (!_chatSessionIds.contains(session.sessionId)) {
+      return;
+    }
+    try {
+      await ref.notifier(chatProvider).syncOutgoingSession(session);
+    } catch (e, st) {
+      logChatError(e, st);
+    }
   }
 
   void setBackground(String sessionId, bool background) {

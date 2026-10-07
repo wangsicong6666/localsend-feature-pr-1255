@@ -7,6 +7,7 @@ import 'package:localsend_app/pages/changelog_page.dart';
 import 'package:localsend_app/pages/donation/donation_page.dart';
 import 'package:localsend_app/pages/language_page.dart';
 import 'package:localsend_app/pages/tabs/settings_tab_controller.dart';
+import 'package:localsend_app/provider/chat/chat_provider.dart';
 import 'package:localsend_app/provider/persistence_provider.dart';
 import 'package:localsend_app/provider/settings_provider.dart';
 import 'package:localsend_app/provider/version_provider.dart';
@@ -351,6 +352,26 @@ class SettingsTab extends StatelessWidget {
                   onChanged: (b) async {
                     await ref.notifier(settingsProvider).setSaveToHistory(b);
                   },
+                ),
+                _SettingsEntry(
+                  label: t.settingsTab.receive.bubbleMaxHeight,
+                  child: Column(
+                    children: [
+                      Slider(
+                        value: ref.watch(chatProvider.select((s) => s.bubbleMaxHeight)).clamp(80.0, 480.0).toDouble(),
+                        min: 80,
+                        max: 480,
+                        onChanged: (v) async {
+                          await ref.notifier(chatProvider).setBubbleMaxHeight(v);
+                        },
+                      ),
+                      Text(
+                        '${ref.watch(chatProvider.select((s) => s.bubbleMaxHeight)).round()} px',
+                        style: Theme.of(context).textTheme.bodySmall,
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),

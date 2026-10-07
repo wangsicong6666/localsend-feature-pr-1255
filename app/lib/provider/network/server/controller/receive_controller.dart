@@ -10,6 +10,7 @@ import 'package:localsend_app/model/state/server/receiving_file.dart';
 import 'package:localsend_app/pages/home_page.dart';
 import 'package:localsend_app/pages/progress_page.dart';
 import 'package:localsend_app/pages/receive_page.dart';
+import 'package:localsend_app/provider/chat/chat_provider.dart';
 import 'package:localsend_app/provider/device_info_provider.dart';
 import 'package:localsend_app/provider/dio_provider.dart';
 import 'package:localsend_app/provider/favorites_provider.dart';
@@ -227,6 +228,28 @@ class ReceiveController {
       ),
     );
 
+    final createdSession = server.getState().session;
+    if (createdSession?.message != null) {
+      if (checkPlatformHasTray() && (await windowManager.isMinimized() || !(await windowManager.isVisible()) || !(await windowManager.isFocused()))) {
+        await showFromTray();
+      }
+      try {
+        await server.ref.notifier(chatProvider).recordIncomingText(
+              fingerprint: createdSession!.sender.fingerprint,
+              ip: createdSession.sender.ip,
+              port: createdSession.sender.port,
+              https: createdSession.sender.https,
+              alias: createdSession.senderAlias,
+              messageId: createdSession.sessionId,
+              text: createdSession.message!,
+            );
+      } catch (e, st) {
+        logChatError(e, st);
+      }
+      closeSession();
+      return server.responseJson(204);
+    }
+
     final quickSave = settings.quickSave && server.getState().session?.message == null;
     final Map<String, String>? selection;
     if (quickSave) {
@@ -299,6 +322,24 @@ class ReceiveController {
             closeSessionOnClose: true,
             sessionId: sessionId,
           ));
+    }
+
+    final accepted = server.getState().session!;
+    try {
+      await server.ref.notifier(chatProvider).recordIncomingFiles(
+            fingerprint: accepted.sender.fingerprint,
+            ip: accepted.sender.ip,
+            port: accepted.sender.port,
+            https: accepted.sender.https,
+            alias: accepted.senderAlias,
+            messageId: accepted.sessionId,
+            files: [
+              for (final file in accepted.files.values.where((f) => f.token != null))
+                (id: file.file.id, fileName: file.file.fileName, fileType: file.file.fileType, size: file.file.size),
+            ],
+          );
+    } catch (e, st) {
+      logChatError(e, st);
     }
 
     final files = {
@@ -444,6 +485,17 @@ class ReceiveController {
             timestamp: DateTime.now().toUtc(),
           ));
 
+      try {
+        await server.ref.notifier(chatProvider).finishIncomingPart(
+              partId: fileId,
+              success: true,
+              fileType: fileType,
+              savedPath: destinationPath,
+            );
+      } catch (e, st) {
+        logChatError(e, st);
+      }
+
       _logger.info('Saved ${receivingFile.file.fileName}.');
     } catch (e, st) {
       server.setState(
@@ -458,6 +510,16 @@ class ReceiveController {
         ),
       );
       _logger.severe('Failed to save file', e, st);
+      try {
+        await server.ref.notifier(chatProvider).finishIncomingPart(
+              partId: fileId,
+              success: false,
+              fileType: receivingFile.file.fileType,
+              savedPath: null,
+            );
+      } catch (chatError, chatSt) {
+        logChatError(chatError, chatSt);
+      }
     }
 
     server.ref.notifier(progressProvider).setProgress(

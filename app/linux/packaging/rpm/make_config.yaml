@@ -9,6 +9,7 @@ icon: assets/img/logo-512.png
 
 requires:
   - libappindicator
+  - sqlite-libs
   - xdg-user-dirs
 
 keywords:

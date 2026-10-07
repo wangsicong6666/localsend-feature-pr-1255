@@ -59,6 +59,8 @@ dependencies:
   shelf_router: 1.1.4
   slang: 3.29.0
   slang_flutter: 3.29.0
+  sqlite3: 2.4.6
+  sqlite3_flutter_libs: 0.5.24
   system_settings: 2.1.0
   tray_manager: 0.2.2
   url_launcher: 6.2.4

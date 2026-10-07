@@ -135,7 +135,8 @@
       "sendLowerPanelColorLightness": "Lightness",
       "sendLowerPanelColorDefault": "Theme default",
       "pasteButtonOpacity": "Paste button opacity",
-      "pasteButtonGradientSpan": "Paste button gradient contrast"
+      "pasteButtonGradientSpan": "Paste button gradient contrast",
+      "bubbleMaxHeight": "Chat bubble max height"
     },
     "send": {
       "title": "Send",
@@ -460,6 +461,23 @@
     "files": "Files",
     "fileName": "File name",
     "size": "Size"
+  },
+  "chat": {
+    "recent": "Recent chats",
+    "empty": "Select a device on the left to start chatting",
+    "noMessages": "No messages yet",
+    "inputHint": "Type a message",
+    "send": "Send",
+    "attach": "Add files",
+    "paste": "Paste",
+    "offline": "Offline",
+    "online": "Online",
+    "folderRejected": "Folders are not kept in chat",
+    "selectDeviceFirst": "Select a device on the left first",
+    "sending": "Sending",
+    "failed": "Incomplete",
+    "dropHint": "Drop files here to add them to the chat",
+    "nearby": "Nearby"
   },
   "assetPicker": {
     "@info": "Translations for the Media selection tool for Android and iPhone",

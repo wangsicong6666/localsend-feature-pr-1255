@@ -49,6 +49,7 @@ class _StringsZhCn extends Translations {
 	@override late final _StringsDialogsZhCn dialogs = _StringsDialogsZhCn._(_root);
 	@override late final _StringsTrayZhCn tray = _StringsTrayZhCn._(_root);
 	@override late final _StringsWebZhCn web = _StringsWebZhCn._(_root);
+	@override late final _StringsChatZhCn chat = _StringsChatZhCn._(_root);
 	@override late final _StringsAssetPickerZhCn assetPicker = _StringsAssetPickerZhCn._(_root);
 }
 
@@ -536,6 +537,7 @@ class _StringsSettingsTabReceiveZhCn extends _StringsSettingsTabReceiveEn {
 	@override String get sendLowerPanelColorDefault => '跟随主题';
 	@override String get pasteButtonOpacity => '粘贴按钮不透明度';
 	@override String get pasteButtonGradientSpan => '粘贴按钮渐变对比度';
+	@override String get bubbleMaxHeight => '气泡最大高度';
 }
 
 // Path: settingsTab.send
@@ -913,6 +915,30 @@ class _StringsSettingsTabGeneralLanguageOptionsZhCn extends _StringsSettingsTabG
 
 	// Translations
 	@override String get system => '跟随系统';
+}
+
+// Path: chat
+class _StringsChatZhCn extends _StringsChatEn {
+	_StringsChatZhCn._(_StringsZhCn root) : this._root = root, super._(root);
+
+	@override final _StringsZhCn _root; // ignore: unused_field
+
+	// Translations
+	@override String get recent => '最近会话';
+	@override String get empty => '选择左侧设备开始聊天';
+	@override String get noMessages => '还没有消息';
+	@override String get inputHint => '输入消息';
+	@override String get send => '发送';
+	@override String get attach => '添加文件';
+	@override String get paste => '粘贴';
+	@override String get offline => '离线';
+	@override String get online => '在线';
+	@override String get folderRejected => '文件夹不会进入聊天';
+	@override String get selectDeviceFirst => '请先在左侧选择设备';
+	@override String get sending => '传输中';
+	@override String get failed => '未完成';
+	@override String get dropHint => '拖入文件以添加到聊天';
+	@override String get nearby => '附近的设备';
 }
 
 // Path: progressPage.total.title

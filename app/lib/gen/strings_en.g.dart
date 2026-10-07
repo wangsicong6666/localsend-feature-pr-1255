@@ -54,6 +54,7 @@ class Translations implements BaseTranslations<AppLocale, Translations> {
 	late final _StringsDialogsEn dialogs = _StringsDialogsEn._(_root);
 	late final _StringsTrayEn tray = _StringsTrayEn._(_root);
 	late final _StringsWebEn web = _StringsWebEn._(_root);
+	late final _StringsChatEn chat = _StringsChatEn._(_root);
 	late final _StringsAssetPickerEn assetPicker = _StringsAssetPickerEn._(_root);
 }
 
@@ -612,6 +613,7 @@ class _StringsSettingsTabReceiveEn {
 	String get sendLowerPanelColorDefault => 'Theme default';
 	String get pasteButtonOpacity => 'Paste button opacity';
 	String get pasteButtonGradientSpan => 'Paste button gradient contrast';
+	String get bubbleMaxHeight => 'Chat bubble max height';
 }
 
 // Path: settingsTab.send
@@ -989,6 +991,30 @@ class _StringsSettingsTabGeneralLanguageOptionsEn {
 
 	// Translations
 	String get system => 'System';
+}
+
+// Path: chat
+class _StringsChatEn {
+	_StringsChatEn._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+	String get recent => 'Recent chats';
+	String get empty => 'Select a device on the left to start chatting';
+	String get noMessages => 'No messages yet';
+	String get inputHint => 'Type a message';
+	String get send => 'Send';
+	String get attach => 'Add files';
+	String get paste => 'Paste';
+	String get offline => 'Offline';
+	String get online => 'Online';
+	String get folderRejected => 'Folders are not kept in chat';
+	String get selectDeviceFirst => 'Select a device on the left first';
+	String get sending => 'Sending';
+	String get failed => 'Incomplete';
+	String get dropHint => 'Drop files here to add them to the chat';
+	String get nearby => 'Nearby';
 }
 
 // Path: progressPage.total.title

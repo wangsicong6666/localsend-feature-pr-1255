@@ -135,7 +135,8 @@
       "sendLowerPanelColorLightness": "明度",
       "sendLowerPanelColorDefault": "跟随主题",
       "pasteButtonOpacity": "粘贴按钮不透明度",
-      "pasteButtonGradientSpan": "粘贴按钮渐变对比度"
+      "pasteButtonGradientSpan": "粘贴按钮渐变对比度",
+      "bubbleMaxHeight": "气泡最大高度"
     },
     "send": {
       "title": "发送",
@@ -390,6 +391,23 @@
     "files": "文件",
     "fileName": "文件名",
     "size": "大小"
+  },
+  "chat": {
+    "recent": "最近会话",
+    "empty": "选择左侧设备开始聊天",
+    "noMessages": "还没有消息",
+    "inputHint": "输入消息",
+    "send": "发送",
+    "attach": "添加文件",
+    "paste": "粘贴",
+    "offline": "离线",
+    "online": "在线",
+    "folderRejected": "文件夹不会进入聊天",
+    "selectDeviceFirst": "请先在左侧选择设备",
+    "sending": "传输中",
+    "failed": "未完成",
+    "dropHint": "拖入文件以添加到聊天",
+    "nearby": "附近的设备"
   },
   "assetPicker": {
     "@info": "Translations for the Media selection tool for Android and Iphone",
