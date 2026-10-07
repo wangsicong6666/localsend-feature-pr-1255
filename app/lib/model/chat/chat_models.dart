@@ -107,6 +107,7 @@ class ChatViewState {
   final List<ChatMessage> messages;
   final List<PendingAttachment> pending;
   final double bubbleMaxHeight;
+  final double composerHeight;
   final bool ready;
 
   const ChatViewState({
@@ -115,6 +116,7 @@ class ChatViewState {
     required this.messages,
     required this.pending,
     required this.bubbleMaxHeight,
+    required this.composerHeight,
     required this.ready,
   });
 
@@ -124,6 +126,7 @@ class ChatViewState {
     messages: [],
     pending: [],
     bubbleMaxHeight: 200,
+    composerHeight: 120,
     ready: false,
   );
 
@@ -134,6 +137,7 @@ class ChatViewState {
     List<ChatMessage>? messages,
     List<PendingAttachment>? pending,
     double? bubbleMaxHeight,
+    double? composerHeight,
     bool? ready,
   }) {
     return ChatViewState(
@@ -142,6 +146,7 @@ class ChatViewState {
       messages: messages ?? this.messages,
       pending: pending ?? this.pending,
       bubbleMaxHeight: bubbleMaxHeight ?? this.bubbleMaxHeight,
+      composerHeight: composerHeight ?? this.composerHeight,
       ready: ready ?? this.ready,
     );
   }

@@ -136,7 +136,8 @@
       "sendLowerPanelColorDefault": "Theme default",
       "pasteButtonOpacity": "Paste button opacity",
       "pasteButtonGradientSpan": "Paste button gradient contrast",
-      "bubbleMaxHeight": "Chat bubble max height"
+      "bubbleMaxHeight": "Chat bubble max height",
+      "composerHeight": "Chat input height"
     },
     "send": {
       "title": "Send",
@@ -164,6 +165,7 @@
       "privacyPolicy": "Privacy Policy",
       "termsOfUse": "Terms of Use"
     },
+    "receiveSend": "Receive & send",
     "advancedSettings": "Advanced settings"
   },
   "troubleshootPage": {
@@ -477,7 +479,9 @@
     "sending": "Sending",
     "failed": "Incomplete",
     "dropHint": "Drop files here to add them to the chat",
-    "nearby": "Nearby"
+    "nearby": "Nearby",
+    "morning": "Morning",
+    "afternoon": "Afternoon"
   },
   "assetPicker": {
     "@info": "Translations for the Media selection tool for Android and iPhone",

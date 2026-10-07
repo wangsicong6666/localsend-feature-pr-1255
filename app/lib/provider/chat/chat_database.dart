@@ -87,6 +87,19 @@ class ChatDatabase {
     _setMeta('bubble_max_height', height.toString());
   }
 
+  double composerHeight() {
+    final raw = _meta('composer_height');
+    final parsed = raw == null ? null : double.tryParse(raw);
+    if (parsed == null || parsed < 72 || parsed > 320) {
+      return 120;
+    }
+    return parsed;
+  }
+
+  void setComposerHeight(double height) {
+    _setMeta('composer_height', height.toString());
+  }
+
   String? activeFingerprint() => _meta('active_fingerprint');
 
   void setActiveFingerprint(String? fingerprint) {

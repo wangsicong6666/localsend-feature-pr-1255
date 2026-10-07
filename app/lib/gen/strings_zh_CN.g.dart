@@ -161,6 +161,7 @@ class _StringsSettingsTabZhCn extends _StringsSettingsTabEn {
 	@override late final _StringsSettingsTabSendZhCn send = _StringsSettingsTabSendZhCn._(_root);
 	@override late final _StringsSettingsTabNetworkZhCn network = _StringsSettingsTabNetworkZhCn._(_root);
 	@override late final _StringsSettingsTabOtherZhCn other = _StringsSettingsTabOtherZhCn._(_root);
+	@override String get receiveSend => '接收发送';
 	@override String get advancedSettings => '高级设置';
 }
 
@@ -538,6 +539,7 @@ class _StringsSettingsTabReceiveZhCn extends _StringsSettingsTabReceiveEn {
 	@override String get pasteButtonOpacity => '粘贴按钮不透明度';
 	@override String get pasteButtonGradientSpan => '粘贴按钮渐变对比度';
 	@override String get bubbleMaxHeight => '气泡最大高度';
+	@override String get composerHeight => '输入区高度';
 }
 
 // Path: settingsTab.send
@@ -939,6 +941,8 @@ class _StringsChatZhCn extends _StringsChatEn {
 	@override String get failed => '未完成';
 	@override String get dropHint => '拖入文件以添加到聊天';
 	@override String get nearby => '附近的设备';
+	@override String get morning => '上午';
+	@override String get afternoon => '下午';
 }
 
 // Path: progressPage.total.title

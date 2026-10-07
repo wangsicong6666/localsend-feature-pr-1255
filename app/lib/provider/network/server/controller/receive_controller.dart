@@ -21,6 +21,7 @@ import 'package:localsend_app/provider/network/server/server_utils.dart';
 import 'package:localsend_app/provider/progress_provider.dart';
 import 'package:localsend_app/provider/receive_history_provider.dart';
 import 'package:localsend_app/provider/settings_provider.dart';
+import 'package:localsend_app/provider/ui/home_tab_provider.dart';
 import 'package:localsend_app/util/api_route_builder.dart';
 import 'package:localsend_app/util/native/directories.dart';
 import 'package:localsend_app/util/native/file_saver.dart';
@@ -37,6 +38,23 @@ import 'package:window_manager/window_manager.dart';
 const _uuid = Uuid();
 
 final _logger = Logger('ReceiveController');
+
+/// A LocalSend text message is one text file whose body is the preview.
+/// Real files keep a null preview and still open the receive page.
+String? _incomingChatText(Map<String, FileDto> files) {
+  if (files.length != 1) {
+    return null;
+  }
+  final file = files.values.first;
+  if (file.fileType != FileType.text) {
+    return null;
+  }
+  final preview = file.preview;
+  if (preview == null || preview.isEmpty) {
+    return null;
+  }
+  return preview;
+}
 
 /// Handles all requests for receiving files.
 class ReceiveController {
@@ -190,6 +208,17 @@ class ReceiveController {
       return server.responseJson(400, message: 'Request must contain at least one file');
     }
 
+    final chatText = _incomingChatText(dto.files);
+    if (chatText != null) {
+      return _acceptChatText(
+        request: request,
+        port: port,
+        https: https,
+        dto: dto,
+        text: chatText,
+      );
+    }
+
     final settings = server.ref.read(settingsProvider);
     final destinationDir = settings.destination ?? await getDefaultDestinationDirectory();
     final cacheDir = await getCacheDirectory();
@@ -227,28 +256,6 @@ class ReceiveController {
         ),
       ),
     );
-
-    final createdSession = server.getState().session;
-    if (createdSession?.message != null) {
-      if (checkPlatformHasTray() && (await windowManager.isMinimized() || !(await windowManager.isVisible()) || !(await windowManager.isFocused()))) {
-        await showFromTray();
-      }
-      try {
-        await server.ref.notifier(chatProvider).recordIncomingText(
-              fingerprint: createdSession!.sender.fingerprint,
-              ip: createdSession.sender.ip,
-              port: createdSession.sender.port,
-              https: createdSession.sender.https,
-              alias: createdSession.senderAlias,
-              messageId: createdSession.sessionId,
-              text: createdSession.message!,
-            );
-      } catch (e, st) {
-        logChatError(e, st);
-      }
-      closeSession();
-      return server.responseJson(204);
-    }
 
     final quickSave = settings.quickSave && server.getState().session?.message == null;
     final Map<String, String>? selection;
@@ -371,6 +378,38 @@ class ReceiveController {
           ).toJson());
     }
     return server.responseJson(200, body: files);
+  }
+
+  /// Text messages stay in the chat history. The receive page is only for files,
+  /// which is what older LocalSend builds still show on their own side.
+  Future<Response> _acceptChatText({
+    required Request request,
+    required int port,
+    required bool https,
+    required PrepareUploadRequestDto dto,
+    required String text,
+  }) async {
+    if (checkPlatformHasTray() && (await windowManager.isMinimized() || !(await windowManager.isVisible()) || !(await windowManager.isFocused()))) {
+      await showFromTray();
+    }
+    final sender = dto.info.toDevice(request.ip, port, https);
+    final favorite = server.ref.read(favoritesProvider).firstWhereOrNull((e) => e.fingerprint == dto.info.fingerprint);
+    final alias = favorite?.alias ?? dto.info.alias;
+    try {
+      await server.ref.notifier(chatProvider).recordIncomingText(
+            fingerprint: sender.fingerprint,
+            ip: sender.ip,
+            port: sender.port,
+            https: sender.https,
+            alias: alias,
+            messageId: _uuid.v4(),
+            text: text,
+          );
+    } catch (e, st) {
+      logChatError(e, st);
+    }
+    server.ref.redux(homeTabProvider).dispatch(SetHomeTabAction(HomeTab.transfer));
+    return server.responseJson(204);
   }
 
   Future<Response> _uploadHandler({

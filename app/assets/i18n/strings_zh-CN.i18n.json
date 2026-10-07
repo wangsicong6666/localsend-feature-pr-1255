@@ -136,7 +136,8 @@
       "sendLowerPanelColorDefault": "跟随主题",
       "pasteButtonOpacity": "粘贴按钮不透明度",
       "pasteButtonGradientSpan": "粘贴按钮渐变对比度",
-      "bubbleMaxHeight": "气泡最大高度"
+      "bubbleMaxHeight": "气泡最大高度",
+      "composerHeight": "输入区高度"
     },
     "send": {
       "title": "发送",
@@ -164,6 +165,7 @@
       "privacyPolicy": "隐私政策",
       "termsOfUse": "使用条款"
     },
+    "receiveSend": "接收发送",
     "advancedSettings": "高级设置"
   },
   "troubleshootPage": {
@@ -407,7 +409,9 @@
     "sending": "传输中",
     "failed": "未完成",
     "dropHint": "拖入文件以添加到聊天",
-    "nearby": "附近的设备"
+    "nearby": "附近的设备",
+    "morning": "上午",
+    "afternoon": "下午"
   },
   "assetPicker": {
     "@info": "Translations for the Media selection tool for Android and Iphone",

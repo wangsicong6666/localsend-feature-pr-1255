@@ -166,6 +166,7 @@ class _StringsSettingsTabEn {
 	late final _StringsSettingsTabSendEn send = _StringsSettingsTabSendEn._(_root);
 	late final _StringsSettingsTabNetworkEn network = _StringsSettingsTabNetworkEn._(_root);
 	late final _StringsSettingsTabOtherEn other = _StringsSettingsTabOtherEn._(_root);
+	String get receiveSend => 'Receive & send';
 	String get advancedSettings => 'Advanced settings';
 }
 
@@ -614,6 +615,7 @@ class _StringsSettingsTabReceiveEn {
 	String get pasteButtonOpacity => 'Paste button opacity';
 	String get pasteButtonGradientSpan => 'Paste button gradient contrast';
 	String get bubbleMaxHeight => 'Chat bubble max height';
+	String get composerHeight => 'Chat input height';
 }
 
 // Path: settingsTab.send
@@ -1015,6 +1017,8 @@ class _StringsChatEn {
 	String get failed => 'Incomplete';
 	String get dropHint => 'Drop files here to add them to the chat';
 	String get nearby => 'Nearby';
+	String get morning => 'Morning';
+	String get afternoon => 'Afternoon';
 }
 
 // Path: progressPage.total.title

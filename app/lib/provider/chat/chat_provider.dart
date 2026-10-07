@@ -60,6 +60,7 @@ class ChatNotifier extends Notifier<ChatViewState> {
       messages: active == null ? const [] : db.messagesFor(active),
       pending: state.pending,
       bubbleMaxHeight: db.bubbleMaxHeight(),
+      composerHeight: db.composerHeight(),
       ready: true,
     );
   }
@@ -108,6 +109,13 @@ class ChatNotifier extends Notifier<ChatViewState> {
     final db = await _database();
     db.setBubbleMaxHeight(clamped);
     state = state.copyWith(bubbleMaxHeight: clamped);
+  }
+
+  Future<void> setComposerHeight(double height) async {
+    final clamped = height.clamp(72.0, 320.0);
+    final db = await _database();
+    db.setComposerHeight(clamped);
+    state = state.copyWith(composerHeight: clamped);
   }
 
   Future<int> addPaths(List<String> paths) async {
@@ -293,6 +301,8 @@ class ChatNotifier extends Notifier<ChatViewState> {
       status: ChatPartStatus.finished,
       parts: const [],
     );
+    db.setActiveFingerprint(peer);
+    state = state.copyWith(activeFingerprint: peer);
     _reload();
   }
 

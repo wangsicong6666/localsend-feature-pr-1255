@@ -13,6 +13,7 @@ import 'package:localsend_app/provider/chat/chat_provider.dart';
 import 'package:localsend_app/provider/network/send_provider.dart';
 import 'package:localsend_app/util/determine_image_type.dart';
 import 'package:localsend_app/util/ui/snackbar.dart';
+import 'package:localsend_app/widget/app_rounded_button_style.dart';
 import 'package:pasteboard/pasteboard.dart';
 import 'package:refena_flutter/refena_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -182,9 +183,17 @@ class _ChatComposerState extends State<ChatComposer> {
   @override
   Widget build(BuildContext context) {
     final pending = context.ref.watch(chatProvider.select((s) => s.pending));
+    final composerHeight = context.ref.watch(chatProvider.select((s) => s.composerHeight));
     final canSend = widget.enabled && widget.onlineDevice != null && !_sending;
+    final scheme = Theme.of(context).colorScheme;
+    final radius = BorderRadius.circular(kAppRoundedButtonRadius);
+    final enabled = widget.enabled && widget.onlineDevice != null;
+    OutlineInputBorder outline(Color color) {
+      return OutlineInputBorder(borderRadius: radius, borderSide: BorderSide(color: color));
+    }
+
     return Material(
-      color: Theme.of(context).colorScheme.surface,
+      color: scheme.surface,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
         child: Column(
@@ -194,12 +203,12 @@ class _ChatComposerState extends State<ChatComposer> {
             if (!widget.enabled)
               Padding(
                 padding: const EdgeInsets.only(bottom: 6),
-                child: Text(t.chat.selectDeviceFirst, style: TextStyle(color: Theme.of(context).colorScheme.outline, fontSize: 12)),
+                child: Text(t.chat.selectDeviceFirst, style: TextStyle(color: scheme.outline, fontSize: 12)),
               )
             else if (widget.onlineDevice == null)
               Padding(
                 padding: const EdgeInsets.only(bottom: 6),
-                child: Text(t.chat.offline, style: TextStyle(color: Theme.of(context).colorScheme.outline, fontSize: 12)),
+                child: Text(t.chat.offline, style: TextStyle(color: scheme.outline, fontSize: 12)),
               ),
             if (pending.isNotEmpty)
               Padding(
@@ -225,44 +234,104 @@ class _ChatComposerState extends State<ChatComposer> {
                   unawaited(_paste());
                 },
               },
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  IconButton(
-                    tooltip: t.chat.attach,
-                    onPressed: widget.enabled ? _attach : null,
-                    icon: const Icon(Icons.attach_file),
-                  ),
-                  IconButton(
-                    tooltip: t.chat.paste,
-                    onPressed: widget.enabled ? _paste : null,
-                    icon: const Icon(Icons.content_paste),
-                  ),
-                  Expanded(
-                    child: TextField(
-                      focusNode: _focus,
-                      controller: _controller,
-                      enabled: widget.enabled && widget.onlineDevice != null,
-                      minLines: 1,
-                      maxLines: 5,
-                      textInputAction: TextInputAction.newline,
-                      decoration: InputDecoration(
-                        hintText: t.chat.inputHint,
-                        isDense: true,
-                        border: const OutlineInputBorder(),
+              child: SizedBox(
+                height: composerHeight,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _ComposerIconButton(
+                      tooltip: t.chat.attach,
+                      icon: Icons.attach_file,
+                      onPressed: widget.enabled ? () => unawaited(_attach()) : null,
+                    ),
+                    const SizedBox(width: 6),
+                    _ComposerIconButton(
+                      tooltip: t.chat.paste,
+                      icon: Icons.content_paste,
+                      onPressed: widget.enabled ? () => unawaited(_paste()) : null,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextField(
+                        focusNode: _focus,
+                        controller: _controller,
+                        enabled: enabled,
+                        expands: true,
+                        minLines: null,
+                        maxLines: null,
+                        textAlignVertical: TextAlignVertical.top,
+                        keyboardType: TextInputType.multiline,
+                        textInputAction: TextInputAction.newline,
+                        decoration: InputDecoration(
+                          hintText: t.chat.inputHint,
+                          filled: true,
+                          fillColor: scheme.surface,
+                          contentPadding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                          border: outline(scheme.outline),
+                          enabledBorder: outline(scheme.outline),
+                          focusedBorder: outline(scheme.primary),
+                          disabledBorder: outline(scheme.outline.withOpacity(0.4)),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton.filled(
-                    tooltip: t.chat.send,
-                    onPressed: canSend ? _send : null,
-                    icon: const Icon(Icons.send),
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    _ComposerIconButton(
+                      tooltip: t.chat.send,
+                      icon: Icons.send,
+                      filled: true,
+                      onPressed: canSend ? () => unawaited(_send()) : null,
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ComposerIconButton extends StatelessWidget {
+  final String tooltip;
+  final IconData icon;
+  final VoidCallback? onPressed;
+  final bool filled;
+
+  const _ComposerIconButton({
+    required this.tooltip,
+    required this.icon,
+    required this.onPressed,
+    this.filled = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final enabled = onPressed != null;
+    final background = !enabled
+        ? scheme.onSurface.withOpacity(0.08)
+        : filled
+            ? scheme.primary
+            : scheme.secondaryContainer;
+    final foreground = !enabled
+        ? scheme.outline
+        : filled
+            ? scheme.onPrimary
+            : scheme.onSecondaryContainer;
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: background,
+        borderRadius: BorderRadius.circular(kAppRoundedButtonRadius),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onPressed,
+          child: SizedBox(
+            width: 40,
+            height: 40,
+            child: Icon(icon, size: 20, color: foreground),
+          ),
         ),
       ),
     );

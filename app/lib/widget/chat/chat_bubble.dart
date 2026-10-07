@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:common/common.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:localsend_app/gen/strings.g.dart';
 import 'package:localsend_app/model/chat/chat_models.dart';
@@ -10,22 +12,28 @@ import 'package:localsend_app/provider/progress_provider.dart';
 import 'package:localsend_app/util/file_size_helper.dart';
 import 'package:localsend_app/util/file_type_ext.dart';
 import 'package:localsend_app/util/native/open_file.dart';
+import 'package:localsend_app/util/native/platform_check.dart';
+import 'package:localsend_app/util/ui/snackbar.dart';
 import 'package:refena_flutter/refena_flutter.dart';
 
-const _dateGap = Duration(minutes: 5);
+int _halfDayKey(int millis) {
+  final local = DateTime.fromMillisecondsSinceEpoch(millis);
+  final afternoon = local.hour >= 12 ? 1 : 0;
+  return local.year * 100000 + local.month * 1000 + local.day * 10 + afternoon;
+}
 
 String formatChatTimestamp(int millis) {
   final local = DateTime.fromMillisecondsSinceEpoch(millis);
   final locale = LocaleSettings.currentLocale.languageTag;
-  return '${DateFormat.yMd(locale).format(local)} ${DateFormat.jm(locale).format(local)}';
+  final period = local.hour < 12 ? t.chat.morning : t.chat.afternoon;
+  return '${DateFormat.yMd(locale).format(local)} $period';
 }
 
 bool chatNeedsDateHeader(ChatMessage? previous, ChatMessage current) {
   if (previous == null) {
     return true;
   }
-  final gap = current.createdAt - previous.createdAt;
-  return gap >= _dateGap.inMilliseconds;
+  return _halfDayKey(previous.createdAt) != _halfDayKey(current.createdAt);
 }
 
 class ChatBubble extends StatelessWidget {
@@ -59,10 +67,11 @@ class ChatBubble extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 if (message.text != null && message.text!.isNotEmpty)
-                  _ClippedText(
+                  _BubbleText(
                     text: message.text!,
                     maxHeight: maxTextHeight,
                     style: TextStyle(color: foreground, fontSize: 15, height: 1.3),
+                    showCopy: outgoing,
                   ),
                 if (message.images.isNotEmpty) ...[
                   if (message.text != null && message.text!.isNotEmpty) const SizedBox(height: 8),
@@ -86,27 +95,86 @@ class ChatBubble extends StatelessWidget {
   }
 }
 
-class _ClippedText extends StatelessWidget {
+class _BubbleText extends StatefulWidget {
   final String text;
   final double maxHeight;
   final TextStyle style;
+  final bool showCopy;
 
-  const _ClippedText({
+  const _BubbleText({
     required this.text,
     required this.maxHeight,
     required this.style,
+    required this.showCopy,
   });
 
   @override
+  State<_BubbleText> createState() => _BubbleTextState();
+}
+
+class _BubbleTextState extends State<_BubbleText> {
+  final _scroll = ScrollController();
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  Future<void> _copy() async {
+    await Clipboard.setData(ClipboardData(text: widget.text));
+    if (!mounted) {
+      return;
+    }
+    if (checkPlatformIsDesktop()) {
+      context.showSnackBar(t.general.copiedToClipboard);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final fontSize = style.fontSize ?? 15;
-    final lineHeight = fontSize * (style.height ?? 1.3);
-    final maxLines = (maxHeight / lineHeight).floor().clamp(1, 100000);
-    return Text(
-      text,
-      style: style,
-      maxLines: maxLines,
-      overflow: TextOverflow.clip,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final copyWidth = widget.showCopy ? 28.0 : 0.0;
+        final painter = TextPainter(
+          text: TextSpan(text: widget.text, style: widget.style),
+          textDirection: Directionality.of(context),
+        )..layout(maxWidth: math.max(0, constraints.maxWidth - copyWidth));
+        final tooTall = painter.height > widget.maxHeight;
+        painter.dispose();
+        final text = Text(widget.text, style: widget.style);
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: tooTall
+                  ? SizedBox(
+                      height: widget.maxHeight,
+                      child: Scrollbar(
+                        controller: _scroll,
+                        thumbVisibility: true,
+                        child: SingleChildScrollView(
+                          controller: _scroll,
+                          child: text,
+                        ),
+                      ),
+                    )
+                  : text,
+            ),
+            if (widget.showCopy)
+              IconButton(
+                tooltip: t.general.copy,
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                onPressed: () {
+                  unawaited(_copy());
+                },
+                icon: Icon(Icons.copy, size: 16, color: widget.style.color),
+              ),
+          ],
+        );
+      },
     );
   }
 }

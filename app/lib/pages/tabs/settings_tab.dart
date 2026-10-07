@@ -16,12 +16,12 @@ import 'package:localsend_app/util/device_type_ext.dart';
 import 'package:localsend_app/util/native/autostart_helper.dart';
 import 'package:localsend_app/util/native/pick_directory_path.dart';
 import 'package:localsend_app/util/native/platform_check.dart';
+import 'package:localsend_app/widget/app_rounded_button_style.dart';
 import 'package:localsend_app/widget/custom_dropdown_button.dart';
 import 'package:localsend_app/widget/dialogs/encryption_disabled_notice.dart';
 import 'package:localsend_app/widget/dialogs/quick_save_notice.dart';
 import 'package:localsend_app/widget/dialogs/send_panel_color_picker_dialog.dart';
 import 'package:localsend_app/widget/dialogs/text_field_tv.dart';
-import 'package:localsend_app/widget/labeled_checkbox.dart';
 import 'package:localsend_app/widget/local_send_logo.dart';
 import 'package:localsend_app/widget/responsive_list_view.dart';
 import 'package:refena_flutter/refena_flutter.dart';
@@ -31,8 +31,23 @@ import 'package:url_launcher/url_launcher.dart';
 final _isLinux = checkPlatform([TargetPlatform.linux]);
 final _isWindows = checkPlatform([TargetPlatform.windows]);
 
-class SettingsTab extends StatelessWidget {
+enum _SettingsPageTab {
+  general,
+  receiveSend,
+  network,
+  other,
+  advanced,
+}
+
+class SettingsTab extends StatefulWidget {
   const SettingsTab();
+
+  @override
+  State<SettingsTab> createState() => _SettingsTabState();
+}
+
+class _SettingsTabState extends State<SettingsTab> {
+  _SettingsPageTab _tab = _SettingsPageTab.general;
 
   @override
   Widget build(BuildContext context) {
@@ -41,14 +56,15 @@ class SettingsTab extends StatelessWidget {
       builder: (context, vm) {
         final ref = context.ref;
         return ResponsiveListView(
-          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 40),
+          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 16),
           children: [
-            Padding(
-              padding: const EdgeInsets.only(left: 8),
-              child: Text(t.settingsTab.title, style: Theme.of(context).textTheme.titleLarge, textAlign: TextAlign.center),
+            _SettingsTabBar(
+              selected: _tab,
+              onSelected: (tab) => setState(() => _tab = tab),
             ),
-            const SizedBox(height: 30),
-            _SettingsSection(
+            const SizedBox(height: 16),
+            if (_tab == _SettingsPageTab.general)
+              _SettingsSection(
               title: t.settingsTab.general.title,
               children: [
                 _SettingsEntry(
@@ -85,15 +101,6 @@ class SettingsTab extends StatelessWidget {
                   onTap: () => vm.onTapLanguage(context),
                 ),
                 if (checkPlatformIsDesktop()) ...[
-                  /// Wayland does window position handling, so there's no need for it. See [https://github.com/localsend/localsend/issues/544]
-                  if (vm.advanced && checkPlatformIsNotWaylandDesktop())
-                    _BooleanEntry(
-                      label: t.settingsTab.general.saveWindowPlacement,
-                      value: vm.settings.saveWindowPlacement,
-                      onChanged: (b) async {
-                        await ref.notifier(settingsProvider).setSaveWindowPlacement(b);
-                      },
-                    ),
                   const _DesktopLayoutSettings(),
                   if (checkPlatformHasTray())
                     _BooleanEntry(
@@ -169,7 +176,8 @@ class SettingsTab extends StatelessWidget {
                 ),
               ],
             ),
-            _SettingsSection(
+            if (_tab == _SettingsPageTab.receiveSend) ...[
+              _SettingsSection(
               title: t.settingsTab.receive.title,
               children: [
                 _BooleanEntry(
@@ -373,9 +381,28 @@ class SettingsTab extends StatelessWidget {
                     ],
                   ),
                 ),
+                _SettingsEntry(
+                  label: t.settingsTab.receive.composerHeight,
+                  child: Column(
+                    children: [
+                      Slider(
+                        value: ref.watch(chatProvider.select((s) => s.composerHeight)).clamp(72.0, 320.0).toDouble(),
+                        min: 72,
+                        max: 320,
+                        onChanged: (v) async {
+                          await ref.notifier(chatProvider).setComposerHeight(v);
+                        },
+                      ),
+                      Text(
+                        '${ref.watch(chatProvider.select((s) => s.composerHeight)).round()} px',
+                        style: Theme.of(context).textTheme.bodySmall,
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
-            if (vm.advanced)
               _SettingsSection(
                 title: t.settingsTab.send.title,
                 children: [
@@ -388,7 +415,9 @@ class SettingsTab extends StatelessWidget {
                   ),
                 ],
               ),
-            _SettingsSection(
+            ],
+            if (_tab == _SettingsPageTab.network)
+              _SettingsSection(
               title: t.settingsTab.network.title,
               children: [
                 AnimatedCrossFade(
@@ -474,100 +503,10 @@ class SettingsTab extends StatelessWidget {
                     style: const TextStyle(color: Colors.grey),
                   ),
                 ),
-                if (vm.advanced)
-                  _SettingsEntry(
-                    label: t.settingsTab.network.deviceType,
-                    child: CustomDropdownButton<DeviceType>(
-                      value: vm.deviceInfo.deviceType,
-                      items: DeviceType.values.map((type) {
-                        return DropdownMenuItem(
-                          value: type,
-                          alignment: Alignment.center,
-                          child: Icon(type.icon),
-                        );
-                      }).toList(),
-                      onChanged: (type) async {
-                        await ref.notifier(settingsProvider).setDeviceType(type);
-                      },
-                    ),
-                  ),
-                if (vm.advanced)
-                  _SettingsEntry(
-                    label: t.settingsTab.network.deviceModel,
-                    child: TextFieldTv(
-                      name: t.settingsTab.network.deviceModel,
-                      controller: vm.deviceModelController,
-                      onChanged: (s) async {
-                        await ref.notifier(settingsProvider).setDeviceModel(s);
-                      },
-                    ),
-                  ),
-                if (vm.advanced)
-                  _SettingsEntry(
-                    label: t.settingsTab.network.port,
-                    child: TextFieldTv(
-                      name: t.settingsTab.network.port,
-                      controller: vm.portController,
-                      onChanged: (s) async {
-                        final port = int.tryParse(s);
-                        if (port != null) {
-                          await ref.notifier(settingsProvider).setPort(port);
-                        }
-                      },
-                    ),
-                  ),
-                if (vm.advanced)
-                  _BooleanEntry(
-                    label: t.settingsTab.network.encryption,
-                    value: vm.settings.https,
-                    onChanged: (b) async {
-                      final old = vm.settings.https;
-                      await ref.notifier(settingsProvider).setHttps(b);
-                      if (old && !b && context.mounted) {
-                        await EncryptionDisabledNotice.open(context);
-                      }
-                    },
-                  ),
-                if (vm.advanced)
-                  _SettingsEntry(
-                    label: t.settingsTab.network.multicastGroup,
-                    child: TextFieldTv(
-                      name: t.settingsTab.network.multicastGroup,
-                      controller: vm.multicastController,
-                      onChanged: (s) async {
-                        await ref.notifier(settingsProvider).setMulticastGroup(s);
-                      },
-                    ),
-                  ),
-                AnimatedCrossFade(
-                  crossFadeState: vm.settings.port != defaultPort ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-                  duration: const Duration(milliseconds: 200),
-                  alignment: Alignment.topLeft,
-                  firstChild: Container(),
-                  secondChild: Padding(
-                    padding: const EdgeInsets.only(bottom: 15),
-                    child: Text(
-                      t.settingsTab.network.portWarning(defaultPort: defaultPort),
-                      style: const TextStyle(color: Colors.grey),
-                    ),
-                  ),
-                ),
-                AnimatedCrossFade(
-                  crossFadeState: vm.settings.multicastGroup != defaultMulticastGroup ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-                  duration: const Duration(milliseconds: 200),
-                  alignment: Alignment.topLeft,
-                  firstChild: Container(),
-                  secondChild: Padding(
-                    padding: const EdgeInsets.only(bottom: 15),
-                    child: Text(
-                      t.settingsTab.network.multicastGroupWarning(defaultMulticast: defaultMulticastGroup),
-                      style: const TextStyle(color: Colors.grey),
-                    ),
-                  ),
-                ),
               ],
             ),
-            _SettingsSection(
+            if (_tab == _SettingsPageTab.other)
+              _SettingsSection(
               title: t.settingsTab.other.title,
               padding: const EdgeInsets.only(bottom: 0),
               children: [
@@ -608,18 +547,122 @@ class SettingsTab extends StatelessWidget {
                   ),
               ],
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                LabeledCheckbox(
-                  label: t.settingsTab.advancedSettings,
-                  value: vm.advanced,
-                  labelFirst: true,
-                  onChanged: (b) => vm.onTapAdvanced(b == true),
-                ),
-                const SizedBox(width: 10),
-              ],
-            ),
+            if (_tab == _SettingsPageTab.advanced)
+              _SettingsSection(
+                title: t.settingsTab.advancedSettings,
+                children: [
+                  AnimatedCrossFade(
+                    crossFadeState: vm.serverState != null &&
+                            (vm.serverState!.alias != vm.settings.alias ||
+                                vm.serverState!.port != vm.settings.port ||
+                                vm.serverState!.https != vm.settings.https)
+                        ? CrossFadeState.showSecond
+                        : CrossFadeState.showFirst,
+                    duration: const Duration(milliseconds: 200),
+                    alignment: Alignment.topLeft,
+                    firstChild: Container(),
+                    secondChild: Padding(
+                      padding: const EdgeInsets.only(bottom: 15),
+                      child: Text(t.settingsTab.network.needRestart, style: TextStyle(color: Theme.of(context).colorScheme.warning)),
+                    ),
+                  ),
+                  if (checkPlatformIsDesktop() && checkPlatformIsNotWaylandDesktop())
+                    _BooleanEntry(
+                      label: t.settingsTab.general.saveWindowPlacement,
+                      value: vm.settings.saveWindowPlacement,
+                      onChanged: (b) async {
+                        await ref.notifier(settingsProvider).setSaveWindowPlacement(b);
+                      },
+                    ),
+                  _SettingsEntry(
+                    label: t.settingsTab.network.deviceType,
+                    child: CustomDropdownButton<DeviceType>(
+                      value: vm.deviceInfo.deviceType,
+                      items: DeviceType.values.map((type) {
+                        return DropdownMenuItem(
+                          value: type,
+                          alignment: Alignment.center,
+                          child: Icon(type.icon),
+                        );
+                      }).toList(),
+                      onChanged: (type) async {
+                        await ref.notifier(settingsProvider).setDeviceType(type);
+                      },
+                    ),
+                  ),
+                  _SettingsEntry(
+                    label: t.settingsTab.network.deviceModel,
+                    child: TextFieldTv(
+                      name: t.settingsTab.network.deviceModel,
+                      controller: vm.deviceModelController,
+                      onChanged: (s) async {
+                        await ref.notifier(settingsProvider).setDeviceModel(s);
+                      },
+                    ),
+                  ),
+                  _SettingsEntry(
+                    label: t.settingsTab.network.port,
+                    child: TextFieldTv(
+                      name: t.settingsTab.network.port,
+                      controller: vm.portController,
+                      onChanged: (s) async {
+                        final port = int.tryParse(s);
+                        if (port != null) {
+                          await ref.notifier(settingsProvider).setPort(port);
+                        }
+                      },
+                    ),
+                  ),
+                  _BooleanEntry(
+                    label: t.settingsTab.network.encryption,
+                    value: vm.settings.https,
+                    onChanged: (b) async {
+                      final old = vm.settings.https;
+                      await ref.notifier(settingsProvider).setHttps(b);
+                      if (old && !b && context.mounted) {
+                        await EncryptionDisabledNotice.open(context);
+                      }
+                    },
+                  ),
+                  _SettingsEntry(
+                    label: t.settingsTab.network.multicastGroup,
+                    child: TextFieldTv(
+                      name: t.settingsTab.network.multicastGroup,
+                      controller: vm.multicastController,
+                      onChanged: (s) async {
+                        await ref.notifier(settingsProvider).setMulticastGroup(s);
+                      },
+                    ),
+                  ),
+                  AnimatedCrossFade(
+                    crossFadeState: vm.settings.port != defaultPort ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                    duration: const Duration(milliseconds: 200),
+                    alignment: Alignment.topLeft,
+                    firstChild: Container(),
+                    secondChild: Padding(
+                      padding: const EdgeInsets.only(bottom: 15),
+                      child: Text(
+                        t.settingsTab.network.portWarning(defaultPort: defaultPort),
+                        style: const TextStyle(color: Colors.grey),
+                      ),
+                    ),
+                  ),
+                  AnimatedCrossFade(
+                    crossFadeState: vm.settings.multicastGroup != defaultMulticastGroup ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                    duration: const Duration(milliseconds: 200),
+                    alignment: Alignment.topLeft,
+                    firstChild: Container(),
+                    secondChild: Padding(
+                      padding: const EdgeInsets.only(bottom: 15),
+                      child: Text(
+                        t.settingsTab.network.multicastGroupWarning(defaultMulticast: defaultMulticastGroup),
+                        style: const TextStyle(color: Colors.grey),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            if (_tab == _SettingsPageTab.other) ...[
             const SizedBox(height: 20),
             const LocalSendLogo(withText: true),
             const SizedBox(height: 5),
@@ -647,9 +690,89 @@ class SettingsTab extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 80),
+            ],
           ],
         );
       },
+    );
+  }
+}
+
+class _SettingsTabBar extends StatelessWidget {
+  final _SettingsPageTab selected;
+  final ValueChanged<_SettingsPageTab> onSelected;
+
+  const _SettingsTabBar({
+    required this.selected,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final tabs = <(_SettingsPageTab, String)>[
+      (_SettingsPageTab.general, t.settingsTab.general.title),
+      (_SettingsPageTab.receiveSend, t.settingsTab.receiveSend),
+      (_SettingsPageTab.network, t.settingsTab.network.title),
+      (_SettingsPageTab.other, t.settingsTab.other.title),
+      (_SettingsPageTab.advanced, t.settingsTab.advancedSettings),
+    ];
+    return Row(
+      children: [
+        for (var i = 0; i < tabs.length; i++) ...[
+          if (i > 0) const SizedBox(width: 8),
+          Expanded(
+            child: _SettingsTabButton(
+              label: tabs[i].$2,
+              selected: selected == tabs[i].$1,
+              onTap: () => onSelected(tabs[i].$1),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _SettingsTabButton extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _SettingsTabButton({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: selected ? scheme.primary : scheme.secondaryContainer,
+      borderRadius: BorderRadius.circular(kAppRoundedButtonRadius),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(kAppRoundedButtonRadius),
+        child: SizedBox(
+          height: 40,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            child: Center(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  style: TextStyle(
+                    color: selected ? scheme.onPrimary : scheme.onSecondaryContainer,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
