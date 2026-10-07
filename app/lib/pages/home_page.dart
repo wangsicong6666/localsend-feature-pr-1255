@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:common/common.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/material.dart';
@@ -145,26 +143,15 @@ class _HomePageState extends State<HomePage> with Refena {
         if (!mounted) {
           return;
         }
-        final paths = <String>[];
-        var skippedDirs = 0;
-        for (final file in event.files) {
-          if (Directory(file.path).existsSync()) {
-            skippedDirs++;
-          } else {
-            paths.add(file.path);
-          }
-        }
-        if (skippedDirs > 0) {
-          context.showSnackBar(t.chat.folderRejected);
-        }
-        if (paths.isEmpty) {
-          return;
-        }
+        setState(() => _dragAndDropIndicator = false);
         if (ref.read(chatProvider).activeFingerprint == null) {
           context.showSnackBar(t.chat.selectDeviceFirst);
           return;
         }
-        await ref.notifier(chatProvider).addPaths(paths);
+        final skippedDirs = await ref.notifier(chatProvider).addPaths(event.files.map((file) => file.path).toList());
+        if (skippedDirs > 0 && mounted) {
+          context.showSnackBar(t.chat.folderRejected);
+        }
       },
       child: ResponsiveBuilder(
         builder: (sizingInformation) {

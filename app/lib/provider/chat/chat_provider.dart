@@ -122,18 +122,20 @@ class ChatNotifier extends Notifier<ChatViewState> {
     await ensureReady();
     var skippedDirs = 0;
     final next = [...state.pending];
-    for (final path in paths) {
+    for (final raw in paths) {
+      final path = _localFilePath(raw);
       if (path.isEmpty) {
         continue;
       }
-      if (Directory(path).existsSync() || chatIsDirectoryName(path)) {
+      final type = _fileTypeOf(path);
+      if (type == FileSystemEntityType.directory) {
         skippedDirs++;
         continue;
       }
-      final file = File(path);
-      if (!file.existsSync()) {
+      if (type != FileSystemEntityType.file) {
         continue;
       }
+      final file = File(path);
       final name = p.basename(path);
       next.add(PendingAttachment(
         id: _uuid.v4(),
@@ -428,6 +430,22 @@ bool _isTerminal(SessionStatus status) {
     case SessionStatus.canceledBySender:
     case SessionStatus.canceledByReceiver:
       return true;
+  }
+}
+
+String _localFilePath(String raw) {
+  final trimmed = raw.trim();
+  if (trimmed.startsWith('file://')) {
+    return Uri.parse(trimmed).toFilePath();
+  }
+  return trimmed;
+}
+
+FileSystemEntityType _fileTypeOf(String path) {
+  try {
+    return FileSystemEntity.typeSync(path);
+  } catch (_) {
+    return FileSystemEntityType.notFound;
   }
 }
 
