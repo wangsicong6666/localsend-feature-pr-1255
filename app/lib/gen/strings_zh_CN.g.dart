@@ -943,6 +943,7 @@ class _StringsChatZhCn extends _StringsChatEn {
 	@override String get nearby => '附近的设备';
 	@override String get morning => '上午';
 	@override String get afternoon => '下午';
+	@override String get scrollToLatest => '最新消息';
 }
 
 // Path: progressPage.total.title

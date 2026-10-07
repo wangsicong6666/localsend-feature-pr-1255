@@ -8,11 +8,13 @@ class ChatMessageList extends StatefulWidget {
   final String? activeFingerprint;
   final List<ChatMessage> messages;
   final double bubbleMaxHeight;
+  final ScrollController scrollController;
 
   const ChatMessageList({
     required this.activeFingerprint,
     required this.messages,
     required this.bubbleMaxHeight,
+    required this.scrollController,
   });
 
   @override
@@ -20,9 +22,10 @@ class ChatMessageList extends StatefulWidget {
 }
 
 class _ChatMessageListState extends State<ChatMessageList> {
-  final _controller = ScrollController();
   var _stickToBottom = true;
   int _lastCount = 0;
+
+  ScrollController get _controller => widget.scrollController;
 
   @override
   void initState() {
@@ -46,7 +49,6 @@ class _ChatMessageListState extends State<ChatMessageList> {
   @override
   void dispose() {
     _controller.removeListener(_onScroll);
-    _controller.dispose();
     super.dispose();
   }
 

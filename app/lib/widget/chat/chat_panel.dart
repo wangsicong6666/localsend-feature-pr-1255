@@ -10,8 +10,33 @@ import 'package:localsend_app/widget/chat/chat_message_list.dart';
 import 'package:localsend_app/widget/list_tile/device_list_tile.dart';
 import 'package:refena_flutter/refena_flutter.dart';
 
-class ChatPanel extends StatelessWidget {
+class ChatPanel extends StatefulWidget {
   const ChatPanel();
+
+  @override
+  State<ChatPanel> createState() => _ChatPanelState();
+}
+
+class _ChatPanelState extends State<ChatPanel> {
+  final _scroll = ScrollController();
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  void _jumpToLatest() {
+    void go() {
+      if (!_scroll.hasClients) {
+        return;
+      }
+      _scroll.jumpTo(_scroll.position.maxScrollExtent);
+    }
+
+    go();
+    WidgetsBinding.instance.addPostFrameCallback((_) => go());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -88,12 +113,14 @@ class ChatPanel extends StatelessWidget {
             activeFingerprint: active,
             messages: chat.messages,
             bubbleMaxHeight: chat.bubbleMaxHeight,
+            scrollController: _scroll,
           ),
         ),
         const Divider(height: 1),
         ChatComposer(
           onlineDevice: online,
           enabled: active != null,
+          onJumpToLatest: active == null ? null : _jumpToLatest,
         ),
       ],
     );

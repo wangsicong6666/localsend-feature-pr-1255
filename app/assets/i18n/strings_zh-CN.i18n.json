@@ -411,7 +411,8 @@
     "dropHint": "拖入文件以添加到聊天",
     "nearby": "附近的设备",
     "morning": "上午",
-    "afternoon": "下午"
+    "afternoon": "下午",
+    "scrollToLatest": "最新消息"
   },
   "assetPicker": {
     "@info": "Translations for the Media selection tool for Android and Iphone",

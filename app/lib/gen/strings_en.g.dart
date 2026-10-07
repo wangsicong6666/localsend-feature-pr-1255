@@ -1019,6 +1019,7 @@ class _StringsChatEn {
 	String get nearby => 'Nearby';
 	String get morning => 'Morning';
 	String get afternoon => 'Afternoon';
+	String get scrollToLatest => 'Latest';
 }
 
 // Path: progressPage.total.title

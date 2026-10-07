@@ -14,6 +14,7 @@ import 'package:localsend_app/util/file_type_ext.dart';
 import 'package:localsend_app/util/native/open_file.dart';
 import 'package:localsend_app/util/native/platform_check.dart';
 import 'package:localsend_app/util/ui/snackbar.dart';
+import 'package:pasteboard/pasteboard.dart';
 import 'package:refena_flutter/refena_flutter.dart';
 
 int _halfDayKey(int millis) {
@@ -71,7 +72,7 @@ class ChatBubble extends StatelessWidget {
                     text: message.text!,
                     maxHeight: maxTextHeight,
                     style: TextStyle(color: foreground, fontSize: 15, height: 1.3),
-                    showCopy: outgoing,
+                    showCopy: true,
                   ),
                 if (message.images.isNotEmpty) ...[
                   if (message.text != null && message.text!.isNotEmpty) const SizedBox(height: 8),
@@ -236,12 +237,66 @@ class _ImageTile extends StatelessWidget {
                 Image.file(file, fit: BoxFit.cover, cacheWidth: 480)
               else
                 Icon(Icons.image, color: Theme.of(context).colorScheme.outline),
+              Positioned(
+                top: 2,
+                right: 2,
+                child: _ImageCopyButton(path: showImage ? path : null),
+              ),
               if (part.status == ChatPartStatus.sending)
                 const Align(
                   alignment: Alignment.bottomCenter,
                   child: LinearProgressIndicator(minHeight: 3),
                 ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+const _imageCopyRadius = 6.0;
+
+class _ImageCopyButton extends StatelessWidget {
+  final String? path;
+
+  const _ImageCopyButton({
+    required this.path,
+  });
+
+  Future<void> _copy(BuildContext context) async {
+    final filePath = path;
+    if (filePath == null) {
+      return;
+    }
+    final bytes = await File(filePath).readAsBytes();
+    await Pasteboard.writeImage(bytes);
+    if (!context.mounted) {
+      return;
+    }
+    if (checkPlatformIsDesktop()) {
+      context.showSnackBar(t.general.copiedToClipboard);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = path != null;
+    return Tooltip(
+      message: t.general.copy,
+      child: Material(
+        color: Colors.black54,
+        borderRadius: BorderRadius.circular(_imageCopyRadius),
+        child: InkWell(
+          onTap: enabled
+              ? () {
+                  unawaited(_copy(context));
+                }
+              : null,
+          borderRadius: BorderRadius.circular(_imageCopyRadius),
+          child: const Padding(
+            padding: EdgeInsets.all(4),
+            child: Icon(Icons.copy, size: 14, color: Colors.white),
           ),
         ),
       ),

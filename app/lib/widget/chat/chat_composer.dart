@@ -23,10 +23,12 @@ const _uuid = Uuid();
 class ChatComposer extends StatefulWidget {
   final Device? onlineDevice;
   final bool enabled;
+  final VoidCallback? onJumpToLatest;
 
   const ChatComposer({
     required this.onlineDevice,
     required this.enabled,
+    required this.onJumpToLatest,
   });
 
   @override
@@ -239,6 +241,12 @@ class _ChatComposerState extends State<ChatComposer> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    _ComposerIconButton(
+                      tooltip: t.chat.scrollToLatest,
+                      icon: Icons.keyboard_double_arrow_down,
+                      onPressed: widget.onJumpToLatest,
+                    ),
+                    const SizedBox(width: 6),
                     _ComposerIconButton(
                       tooltip: t.chat.attach,
                       icon: Icons.attach_file,

@@ -481,7 +481,8 @@
     "dropHint": "Drop files here to add them to the chat",
     "nearby": "Nearby",
     "morning": "Morning",
-    "afternoon": "Afternoon"
+    "afternoon": "Afternoon",
+    "scrollToLatest": "Latest"
   },
   "assetPicker": {
     "@info": "Translations for the Media selection tool for Android and iPhone",
