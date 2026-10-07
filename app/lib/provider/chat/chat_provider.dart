@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:common/common.dart';
 import 'package:localsend_app/model/chat/chat_models.dart';
 import 'package:localsend_app/model/state/send/send_session_state.dart';
+import 'package:localsend_app/provider/chat/chat_database.dart';
 import 'package:localsend_app/util/file_path_helper.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
